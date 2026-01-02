@@ -205,7 +205,7 @@ reportlab==4.0.7          # ReportLab integration
 cd /Users/atalibamiguel/Documents/AgenticOne/agenticone/agenticone-backend
 source venv/bin/activate
 export GOOGLE_APPLICATION_CREDENTIALS=/Users/atalibamiguel/Documents/AgenticOne/agenticone-ed918-9678627db0c2.json
-export GOOGLE_CLIENT_SECRET=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
+export GOOGLE_CLIENT_SECRET=your-google-client-secret-here
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
