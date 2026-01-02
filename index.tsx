@@ -14,6 +14,7 @@ declare global {
 }
 
 const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+const API_BASE_URL = (import.meta.env.VITE_API_URL || window.location.origin).replace(/\/$/, '');
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE_MB = 10;
@@ -666,7 +667,7 @@ const App: React.FC = () => {
             const userEmail = user.email || 'user@example.com';
 
             // Call the backend report generation API
-            const response = await fetch('http://localhost:8000/api/reports/generate', {
+            const response = await fetch(`${API_BASE_URL}/api/reports/generate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -688,7 +689,7 @@ const App: React.FC = () => {
             if (result.status === 'success') {
                 // Open the generated report in a new tab
                 // The report_id doesn't include .html, but the actual file does
-                const reportUrl = `http://localhost:8000/api/reports/preview/${result.report.report_id}.html`;
+                const reportUrl = `${API_BASE_URL}/api/reports/preview/${result.report.report_id}.html`;
                 window.open(reportUrl, '_blank');
                 
                 // Add a success message to the chat
@@ -745,7 +746,7 @@ const App: React.FC = () => {
     const currentChatHistory = chatHistories[selectedAgent] || [];
     
     return (
-        <div className="flex flex-col h-screen font-sans bg-gray-900 text-gray-100">
+        <div className="flex flex-col h-screen font-sans bg-slate-950 text-gray-100">
             <Header 
                 user={user} 
                 onSignOut={handleSignOut} 
@@ -756,10 +757,10 @@ const App: React.FC = () => {
                 conversationCount={allConversations.length}
             />
             
-            {/* Agent Tabs */}
-            <div className="bg-gray-800 border-b border-gray-700">
-                <div className="px-6 py-2">
-                    <AgentTabs selectedAgent={selectedAgent} onSelectAgent={setSelectedAgent} />
+            {/* Agent Console */}
+            <div className="border-b border-slate-800 bg-[radial-gradient(900px_320px_at_5%_-10%,rgba(14,165,233,0.2),transparent),radial-gradient(700px_260px_at_95%_0%,rgba(34,197,94,0.18),transparent)]">
+                <div className="px-6 py-6">
+                    <AgentRoster selectedAgent={selectedAgent} onSelectAgent={setSelectedAgent} />
                 </div>
             </div>
 
@@ -1081,22 +1082,58 @@ const App: React.FC = () => {
     );
 };
 
-const AgentTabs: React.FC<{ selectedAgent: AgentRole, onSelectAgent: (agentId: AgentRole) => void }> = memo(({ selectedAgent, onSelectAgent }) => (
-    <div className="w-full">
-        <div className="flex border-b border-gray-700 overflow-x-auto">
-            {Object.values(AGENT_ROLES).map(agent => (
-                <button
-                    key={agent.id}
-                    onClick={() => onSelectAgent(agent.id)}
-                    className={`flex-shrink-0 px-4 py-3 text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-500 ${
-                        selectedAgent === agent.id 
-                            ? 'text-cyan-400 border-b-2 border-cyan-400 bg-gray-800' 
-                            : 'text-gray-400 hover:text-white hover:bg-gray-700'
-                    }`}
-                >
-                    {agent.name}
-                </button>
-            ))}
+const AgentRoster: React.FC<{ selectedAgent: AgentRole, onSelectAgent: (agentId: AgentRole) => void }> = memo(({ selectedAgent, onSelectAgent }) => (
+    <div className="space-y-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+                <p className="text-xs uppercase tracking-[0.35em] text-cyan-300/70">Agent control deck</p>
+                <h2 className="text-2xl font-semibold text-white mt-2">Choose your specialist agent</h2>
+                <p className="text-sm text-gray-400 mt-2 max-w-2xl">
+                    Each agent is tuned for a distinct discipline. Pick one to anchor the analysis and keep the conversation focused.
+                </p>
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-slate-900/70 px-4 py-2 text-xs uppercase tracking-widest text-cyan-200">
+                Active agent
+                <span className="text-white/90">{AGENT_ROLES[selectedAgent].name}</span>
+            </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {Object.values(AGENT_ROLES).map(agent => {
+                const isActive = selectedAgent === agent.id;
+                return (
+                    <button
+                        key={agent.id}
+                        onClick={() => onSelectAgent(agent.id)}
+                        aria-pressed={isActive}
+                        className={`group relative rounded-2xl border px-5 py-4 text-left transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-400/70 focus:ring-offset-2 focus:ring-offset-slate-900 ${
+                            isActive
+                                ? 'border-cyan-400/70 bg-slate-900/90 shadow-lg shadow-cyan-500/10'
+                                : 'border-slate-700/80 bg-slate-900/70 hover:-translate-y-0.5 hover:border-cyan-400/50 hover:bg-slate-900/90'
+                        }`}
+                    >
+                        <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                                <AssistantAvatar avatarUrl={agent.avatar} className="h-11 w-11 border border-slate-700/80 bg-slate-800/60" />
+                                <div>
+                                    <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Agent</p>
+                                    <h3 className="text-lg font-semibold text-white">{agent.name}</h3>
+                                </div>
+                            </div>
+                            <span className={`rounded-full px-3 py-1 text-xs font-medium ${
+                                isActive ? 'bg-cyan-400/20 text-cyan-200' : 'bg-slate-800/70 text-gray-300'
+                            }`}>
+                                {isActive ? 'Active' : 'Select'}
+                            </span>
+                        </div>
+                        <p className="mt-3 text-sm text-gray-400 min-h-[72px]">{agent.description}</p>
+                        <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
+                            <span className="uppercase tracking-[0.25em]">Specialist</span>
+                            <span className="text-cyan-300/70 group-hover:text-cyan-200">Engage</span>
+                        </div>
+                    </button>
+                );
+            })}
         </div>
     </div>
 ));
