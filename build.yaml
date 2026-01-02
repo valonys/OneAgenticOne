@@ -1,0 +1,16 @@
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - gcr.io/$PROJECT_ID/agenticone-backend:$SHORT_SHA
+      - -f
+      - agenticone-backend/Dockerfile
+      - agenticone-backend
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - gcr.io/$PROJECT_ID/agenticone-backend:$SHORT_SHA
+
+images:
+  - gcr.io/$PROJECT_ID/agenticone-backend:$SHORT_SHA
