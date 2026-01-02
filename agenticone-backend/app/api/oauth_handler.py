@@ -17,11 +17,17 @@ import os
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "835773828317-v3ce03jcca5o7nq09vs2tuc1tejke8du.apps.googleusercontent.com")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "your-client-secret-here")
 
-# Debug environment variables
-print(f"🔍 Environment check:")
-print(f"   - GOOGLE_CLIENT_SECRET from env: {os.getenv('GOOGLE_CLIENT_SECRET', 'NOT_SET')}")
-print(f"   - GOOGLE_CLIENT_SECRET loaded: {GOOGLE_CLIENT_SECRET}")
-print(f"   - Is default value: {GOOGLE_CLIENT_SECRET == 'your-client-secret-here'}")
+def mask_value(value: str, visible: int = 4) -> str:
+    if not value:
+        return "NOT_SET"
+    if len(value) <= visible:
+        return "*" * len(value)
+    return f"{'*' * (len(value) - visible)}{value[-visible:]}"
+
+# Debug environment variables without leaking secrets
+print("🔍 Environment check:")
+print(f"   - GOOGLE_CLIENT_ID: {mask_value(GOOGLE_CLIENT_ID)}")
+print(f"   - GOOGLE_CLIENT_SECRET set: {GOOGLE_CLIENT_SECRET != 'your-client-secret-here' and bool(GOOGLE_CLIENT_SECRET)}")
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
 
@@ -40,9 +46,9 @@ async def exchange_code_for_tokens(request: Request):
         print(f"   - Has code: {bool(code)}")
         print(f"   - Has verifier: {bool(code_verifier)}")
         print(f"   - Redirect URI: {redirect_uri}")
-        print(f"   - Client ID: {client_id}")
-        print(f"   - Code (first 10 chars): {code[:10] if code else 'None'}...")
-        print(f"   - Verifier (first 10 chars): {code_verifier[:10] if code_verifier else 'None'}...")
+        print(f"   - Client ID: {mask_value(client_id)}")
+        print(f"   - Has code: {bool(code)}")
+        print(f"   - Has verifier: {bool(code_verifier)}")
         
         # Validate required parameters
         if not all([code, redirect_uri, client_id, code_verifier]):
@@ -72,9 +78,7 @@ async def exchange_code_for_tokens(request: Request):
         else:
             print(f"📤 No client_secret (PKCE flow for public client)")
         
-        print(f"📤 Token data: {token_data}")
-        
-        print(f"📤 Sending token request to Google with data: {token_data}")
+        print("📤 Sending token request to Google")
         
         async with httpx.AsyncClient() as client:
             # Use proper content type for Google OAuth
@@ -85,7 +89,6 @@ async def exchange_code_for_tokens(request: Request):
             )
             
             print(f"📥 Google response status: {response.status_code}")
-            print(f"📥 Google response body: {response.text}")
             
             if response.status_code != 200:
                 error_detail = f"Google token exchange failed: {response.text}"
@@ -93,7 +96,7 @@ async def exchange_code_for_tokens(request: Request):
                 raise HTTPException(status_code=400, detail=error_detail)
             
             token_response = response.json()
-            print(f"✅ Token exchange successful, access_token: {token_response.get('access_token', 'None')[:20]}...")
+            print("✅ Token exchange successful")
             
             # Get user info
             user_info = await get_user_info(token_response["access_token"])

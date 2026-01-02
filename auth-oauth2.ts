@@ -14,11 +14,13 @@ class OAuth2GoogleAuth {
   private clientId: string;
   private redirectUri: string;
   private scope: string;
+  private apiBaseUrl: string;
 
   constructor() {
-        this.clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '835773828317-v3ce03jcca5o7nq09vs2tuc1tejke8du.apps.googleusercontent.com';
-    // Use the current origin for redirect URI
-    this.redirectUri = window.location.origin;
+    this.clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '835773828317-v3ce03jcca5o7nq09vs2tuc1tejke8du.apps.googleusercontent.com';
+    const frontendUrl = import.meta.env.VITE_FRONTEND_URL;
+    this.redirectUri = (frontendUrl || window.location.origin).replace(/\/$/, '');
+    this.apiBaseUrl = (import.meta.env.VITE_API_URL || window.location.origin).replace(/\/$/, '');
     this.scope = 'openid profile email';
     
     // Check if we're returning from OAuth callback
@@ -64,7 +66,7 @@ class OAuth2GoogleAuth {
       });
 
       // Exchange authorization code for tokens
-      const response = await fetch('http://localhost:8000/api/auth/token', {
+      const response = await fetch(`${this.apiBaseUrl}/api/auth/token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -14,6 +14,7 @@ declare global {
 }
 
 const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+const API_BASE_URL = (import.meta.env.VITE_API_URL || window.location.origin).replace(/\/$/, '');
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE_MB = 10;
@@ -666,7 +667,7 @@ const App: React.FC = () => {
             const userEmail = user.email || 'user@example.com';
 
             // Call the backend report generation API
-            const response = await fetch('http://localhost:8000/api/reports/generate', {
+            const response = await fetch(`${API_BASE_URL}/api/reports/generate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -688,7 +689,7 @@ const App: React.FC = () => {
             if (result.status === 'success') {
                 // Open the generated report in a new tab
                 // The report_id doesn't include .html, but the actual file does
-                const reportUrl = `http://localhost:8000/api/reports/preview/${result.report.report_id}.html`;
+                const reportUrl = `${API_BASE_URL}/api/reports/preview/${result.report.report_id}.html`;
                 window.open(reportUrl, '_blank');
                 
                 // Add a success message to the chat
